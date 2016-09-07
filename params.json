@@ -1,6 +1,6 @@
 {
   "name": "Cells",
   "tagline": "Simulating a multicellular system with a phase-field model",
-  "body": "## About\r\nThis project is hosted by the [Centre for Computational Physics](http://condmat.lca.uc.pt/) at the [University of Coimbra](www.uc.pt) and consists in a phase-field model for tumor metastasis mechanism. In this version we have implemented the superficial tension and adhesive interaction between the cells and an algorithm to accelerate the numerical integration of a system with several order parameters.\r\n\r\n### Next features:\r\n - Biological Membrane;\r\n - Elasticity;\r\n - Traction forces.\r\n\r\n![alt tag](https://moreirasm.files.wordpress.com/2015/05/vid.gif?w=320)\r\n",
+  "body": "## About\r\nThis project is hosted by the [CFisUC](http://cfisuc.fis.uc.pt/) at the [University of Coimbra](www.uc.pt) and consists in a phase-field model for tumor metastasis mechanism. In this version we have implemented the superficial tension and adhesive interaction between the cells and an algorithm to accelerate the numerical integration of a system with several order parameters.\r\n\r\n### Next features:\r\n - Biological Membrane;\r\n - Elasticity;\r\n - Traction forces.\r\n\r\n![alt tag](https://moreirasm.files.wordpress.com/2015/05/vid.gif?w=320)\r\n",
   "note": "Don't delete this file! It's used internally to help with page regeneration."
 }
