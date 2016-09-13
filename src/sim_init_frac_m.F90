@@ -26,7 +26,7 @@ module sim_init_m
       itype = 1
       i = 1
       if(first) then
-         cell(0:np_part,1)%phi = 0.d0
+         cell(0:np_part,1)%phi = -1.d0
          cell(0:np_part,1)%itype = 1.d0
          do l = 1, np_sphere
             cell(lxyz_inv_part(sphere(l,1),sphere(l,2)),1)%phi = 1.d0
@@ -62,11 +62,11 @@ module sim_init_m
       integer, intent(in) ::  np, iseed, Lsize(2),  ncell, sphere(:,:),&
            np_sphere, drf(2), dri(2), nleap
       real, intent(in) :: cell_radius
+
       ! internal only
       integer :: ip, i, j, l
 
 
-      icell = 1
       i=-Lsize(1)+dri(1)
       do while  (i<= Lsize(1)-drf(1))
           j= -Lsize(2)+dri(2)
@@ -75,7 +75,7 @@ module sim_init_m
                ip = lxyz_inv(i,j)
 
                r(icell) = ip
-      
+
                icell = icell + 1
                j = j + dr(2)
 
@@ -99,8 +99,8 @@ module sim_init_m
       integer, intent(in) ::  Lsize(1:2), np_bndry
       integer, allocatable, intent(inout) :: lxyz(:,:), lxyz_inv(:,:)
       ! internal variables
-      integer :: i, j, l, m, n, ip, ip_part, np, ki, kf
-      real :: hs(1:2)
+      integer :: iint, jint, l, m, n, ip, ip_part, np, ki, kf
+      real :: hs(1:2), i, j
       logical :: boundary, periodic
 
       ip = 0
@@ -109,20 +109,25 @@ module sim_init_m
       ! bulk points
       ! allocated from 1 to np
 
-      do i=-Lsize(1), Lsize(1)-1
-         do j=-Lsize(2), Lsize(2)-1
+      i=-Lsize(1)
+      do while (i<=Lsize(1)-1)
+         j=-Lsize(2)
+         do while(j<= Lsize(2)-1)
 
 
                ip = ip + 1
 
-               lxyz(ip,1) = i
-               lxyz(ip,2) = j
+               lxyz(ip,1) = iint
+               lxyz(ip,2) = jint
+               lxyzf(ip,1) = i
+               lxyzf(ip,2) = j
 
-
-               lxyz_inv(i,j) = ip
-
-
+               lxyz_inv(iint,jint) = ip
+               jint = jint + 1
+               j = j + dr(2)
          end do
+         iint = iint + 1
+         i = i + dr(1)
       end do
 
       ! boundary points

@@ -5,7 +5,7 @@ module global_m
   private
 
   type mesh_t
-     real :: phi, mu, lapl_phi, lapl_mu
+     real :: phi, mu, lapl_phi, lapl_mu, lapl_h
      integer :: itype
   end type mesh_t
 
@@ -27,9 +27,9 @@ module global_m
 
   !  begin parameters
   real, public :: cell_radius, interface_width,  dt
-  integer, public :: tstep, iseed, temp
+  integer, public :: tstep, iseed, temp, ip_part2, ip_part
   character(len=3), public :: dir_name
-  character(len=5), public :: file_name, file_id
+  character(len=6), public :: file_name, file_id
   real, public ::  depletion_weight, phi_total
   ! mesh variables
   integer, allocatable, public :: lxyz(:,:), lxyz_inv(:,:),  grid_cell_domain(:)
@@ -52,10 +52,13 @@ module global_m
   ! local variables
   integer,allocatable, public :: lxyz_part(:,:), lxyz_inv_part(:,:), gammaw(:)
   integer, public :: Lsize_part(2), np_part, np_part_tt, ntype, nleap, dri(2), drf(2), dr(2),&
-  itype, np_part_bndry, ip2
+  itype, np_part_bndry, ip2, ip_global
 
-
-
+  ! coupling constants between the cell_radius
+  real, allocatable, public :: gamma_l(:), eta(:,:), beta(:,:), volume(:)
+  real, allocatable, public :: adhesion(:,:), hfield(:,:), hfield_lapl(:,:)
+  real, public :: adh1, adh2, v1, v2, volume_target, vol_lagrangian
+  integer, public :: cm_calc_counter
 
 
 end module global_m
