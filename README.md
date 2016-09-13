@@ -1,12 +1,13 @@
 # Cells
+## Version 1.0.0 - Stable
 
+This is the first version of a phase-field model that simulate a tumoral colony and a membrane.
 
-### Version 0.0.1 - unstable
+In this version we have implemented the superficial tension and adhesive interaction between the cells and an algorithm to accelerate the numerical integration of a system with several order parameters.
 
-This is the first version of a phase-field model that simulate a tumoral colony and a membrane. 
+### Next features:
+ - Biological Membrane;
+ - Elasticity;
+ - Traction forces.
 
-In this version we have implemented just the excluded contact interaction between the cells and an algorithm to accelerate the numerical integration of a system with several order parameters.
-
-In the next version we expect to include the adhesion between the cells and a Langevin force.
-
-
+![alt tag](https://moreirasm.files.wordpress.com/2015/05/vid.gif?w=320)
