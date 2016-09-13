@@ -1,4 +1,5 @@
-##Version 1.0.0 - Stable
+# Cells
+## Version 1.0.0 - Stable
 
 This is the first version of a phase-field model that simulate a tumoral colony and a membrane.
 
