@@ -75,6 +75,7 @@ module run_cells_m
       ALLOCATE(r(1:tcell))
 
       ALLOCATE(r_cm(1:tcell,1:2))
+      ALLOCATE(r_cm_part(1:tcell,1:2))
       ALLOCATE(volume(1:tcell))
       !call system('rm 001/*')
 
@@ -123,7 +124,6 @@ module run_cells_m
 
         end do
       end if
-
 
 
       call hfield_calc(cell, aux, r, Lsize, lxyz, lxyz_inv, lxyz_part, lxyz_inv_part, ncell, tcell, ntype, np )
@@ -190,7 +190,8 @@ module run_cells_m
           !    hfield(ip,icell) = hfunc(cell(ip,icell)%phi)
               cell(ip,icell)%mu = interface_width*cell(ip,icell)%lapl_phi +&
                    cell(ip,icell)%phi*(1.d0-cell(ip,icell)%phi)*(cell(ip,icell)%phi - 0.50 + &
-                   vol_lagrangian*(volume_target-volume(icell)) - depletion_weight*fnu)
+                   vol_lagrangian*(volume_target-volume(icell)) - depletion_weight*fnu) +&
+                   (8.0-16.0*ran2(iseed) )*cell(ip,icell)%phi*(1.d0-cell(ip,icell)%phi)
 
             end do
          end do
@@ -221,13 +222,30 @@ module run_cells_m
          cell(1:np_part, 1:tcell)%phi = cell(1:np_part,1:tcell)%phi + dt*(cell(1:np_part,1:tcell)%mu)
 
          !cm_calc_counter = cm_calc_counter + 1
-         if(cm_calc_counter.eq.100) then
+         !if(cm_calc_counter.eq.10) then
            cm_calc_counter = 0
-           call cm_calc(r_cm, cell, tcell, np, np_part, r, lxyz, lxyz_inv, lxyz_inv_part)
-           call move(cell, r_cm, r, np, np_part, tcell, lxyz, lxyz_part, lxyz_inv, lxyz_inv_part)
+           !print*,'dbg1'
+           call cm_calc_local(r_cm_part, cell, tcell, np_part, r, lxyz_part, lxyz_inv_part)
+           !print*,'dbg2'
+           do icell=1, tcell
+              !print*,'dbg3',icell
+              !print*, int(r_cm_part(icell,1)),int(r_cm_part(icell,2))
+              ip = lxyz_inv_part(int(r_cm_part(icell,1)),int(r_cm_part(icell,2)))
+              !write(*,*) ip
+             call vec_local2global(ip_global, r(icell), ip, lxyz, lxyz_inv, lxyz_part)
+              !print*,'dbg4', icell
+             !r(icell) = ip
+             r_cm(icell,1:2) = lxyz(ip_global,1:2) + FRACTION(r_cm_part(icell,1:2))
+              !print*,'dbg5', icell
+
+           end do
+            !print*,'dbg6'
+           !call cm_calc(r_cm, cell, tcell, np, np_part, r, lxyz, lxyz_inv, lxyz_inv_part)
+           call move(cell, r_cm, r, np, np_part, tcell, lxyz, lxyz_part, lxyz_inv, lxyz_inv_part,Lsize)
+            !print*,'dbg7'
            !write(*,*) "cell 1", r_cm(1,1:2)
            !write(*,*) "cell 2", r_cm(2,1:2)
-         end if
+         !end if
 
 
 
@@ -317,6 +335,43 @@ module run_cells_m
 
     end subroutine run_cells
 
+
+    subroutine cm_calc_local(r_cm_part, f, tcell, np_part, r, lxyz_part, lxyz_inv_part)
+
+      implicit none
+
+      integer, intent(in) :: tcell, np_part
+      integer, allocatable, intent(in) :: lxyz_part(:,:), lxyz_inv_part(:,:)
+      type(mesh_t), allocatable, intent(inout) :: f(:,:)
+      real, allocatable, intent(inout) :: r_cm_part(:,:)
+      integer, allocatable, intent(inout) :: r(:)
+
+      integer :: ip, icell, ncell, ip_part, ip_global_m
+      real :: volume(1:tcell)
+
+      volume = 0.d0
+      r_cm(tcell,1:2) = 0.d0
+      do ip_part=1, np_part
+
+         do icell=1, tcell
+            ip_global_m = r(icell)
+
+            !call vec_global2local(ip_part, ip_global_m, ip, lxyz, lxyz_inv, lxyz_inv_part)
+
+            if(f(ip_part,icell)%phi.gt.0.d0) then
+               volume(icell) = volume(icell) + f(ip_part,icell)%phi
+               r_cm_part(icell,1:2) = r_cm_part(icell,1:2) + f(ip_part,icell)%phi*lxyz_part(ip_part,1:2)
+            end if
+         end do
+      end do
+      ! Volume = sum phi_i
+      ! (sum phi_i r_i )/Volume
+      r_cm_part(1:tcell,1) = r_cm_part(1:tcell,1)/volume(1:tcell)
+      r_cm_part(1:tcell,2) = r_cm_part(1:tcell,2)/volume(1:tcell)
+
+    end subroutine cm_calc_local
+
+
     subroutine volume_calc(volume, f, tcell, np, np_part, lxyz, lxyz_inv, lxyz_inv_part)
 
       implicit none
@@ -380,62 +435,38 @@ module run_cells_m
 
     end subroutine cm_calc
 
-    subroutine move(f, r_cm, r, np, np_part, tcell, lxyz, lxyz_part, lxyz_inv, lxyz_inv_part)
+    subroutine move(f, r_cm, r, np, np_part, tcell, lxyz, lxyz_part, lxyz_inv, lxyz_inv_part,Lsize)
 
       type(mesh_t), allocatable, intent(inout) :: f(:,:)
       real, allocatable, intent(in) :: r_cm(:,:)
       integer, allocatable, intent(inout) :: r(:)
-      integer, intent(in) :: np, np_part, tcell
+      integer, intent(in) :: np, np_part, tcell, Lsize(2)
       integer, allocatable, intent(in) :: lxyz(:,:), lxyz_part(:,:), lxyz_inv(:,:), lxyz_inv_part(:,:)
       integer :: ip, icell, ncell, ip_part, ip_global_m
-      real ::  delta_r(1:tcell,1:2), ftemp(1:np_part)
+      real ::  delta_r(1:tcell,1:2), ftemp(1:np_part), dimg(1:tcell,1:2)
 
       do icell=1, tcell
         ! I think the problem is the round error in the delta_r
         delta_r(icell,1:2) = r_cm(icell,1:2)-lxyz(r(icell),1:2)
 
-        !write(*,*) delta_r(icell,1:2)
-        !write(*,*) "del__", delta_r(icell,1:2), icell
-        !write(*,*) "pos_i", lxyz(r(icell),1:2)
-        !write(*,*) "pos_f",r_cm(icell,1:2)
+        !dimg(icell,1) = min(abs(delta_r(icell,1)), 2*Lsize(1)-1-abs(delta_r(icell,1)))
+        !dimg(icell,2) = min(abs(delta_r(icell,2)), 2*Lsize(2)-1-abs(delta_r(icell,2)))
+
         if( sqrt(delta_r(icell,1)*delta_r(icell,1)+delta_r(icell,2)*delta_r(icell,2)) .ge. 1.d0 ) then
 
           do ip_part=1, np_part
-              ftemp(ip_part) = f(lxyz_inv_part( lxyz_part(ip_part,1) - int(delta_r(icell,1)), &
-                                                lxyz_part(ip_part,2) - int(delta_r(icell,2))), icell )%phi
+              ! min image method is needed here! maybe.. i don't know
+              ftemp(ip_part) = f(lxyz_inv_part( lxyz_part(ip_part,1) + int(anint(delta_r(icell,1))), &
+                                                lxyz_part(ip_part,2) + int(anint(delta_r(icell,2)))), icell )%phi
           end do
 
           f(1:np_part,icell)%phi = ftemp(1:np_part)
-          r(icell) = lxyz_inv(int(anint(r_cm(icell,1))) , anint(anint(r_cm(icell,2))))
+          r(icell) = lxyz_inv(int(anint(r_cm(icell,1))) , int(anint(r_cm(icell,2))))
         end if
       end do
 
     end subroutine move
 
-    subroutine vec_local2global(ip, ip_global_m, ip_local, lxyz, lxyz_inv, lxyz_part)
 
-      implicit none
-
-      integer, allocatable, intent(in) :: lxyz(:,:),  lxyz_inv(:,:), lxyz_part(:,:)
-      integer, intent(in) :: ip_global_m, ip_local
-      integer, intent(out) :: ip
-
-      ip =  lxyz_inv( lxyz_part(ip_local,1) +lxyz(ip_global_m,1), lxyz_part(ip_local,2) + lxyz(ip_global_m,2) )
-
-    end subroutine vec_local2global
-
-
-    subroutine vec_global2local(ip_part, ip_global_m, ip, lxyz, lxyz_inv, lxyz_inv_part)
-
-      implicit none
-
-      integer, allocatable, intent(in) :: lxyz(:,:),  lxyz_inv(:,:),  lxyz_inv_part(:,:)
-      integer, intent(in) :: ip_global_m, ip
-      integer, intent(out) :: ip_part
-
-      ip_part =  lxyz_inv_part( lxyz(ip,1) - lxyz(ip_global_m,1), lxyz(ip,2) - lxyz(ip_global_m,2))
-
-
-    end subroutine  vec_global2local
 
 end module run_cells_m

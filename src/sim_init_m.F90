@@ -75,7 +75,7 @@ module sim_init_m
                ip = lxyz_inv(i,j)
 
                r(icell) = ip
-      
+
                icell = icell + 1
                j = j + dr(2)
 
@@ -276,7 +276,7 @@ module sim_init_m
       call getlog(username)
       write(*,'(A)') "                                Running Cell"
       write(*,'(A)') "       "
-      write(*,'(A)') "Version        :       0.0.1"
+      write(*,'(A)') "Version        :       1.0.s (December 14, 2016)"
       write(*,'(A,A)') "Locate         :       ", trim(cwd)
       write(*,'(A,A)') "User           :       ", trim(username)
       write(*,'(A)') "Developer      :       Moreira, M."

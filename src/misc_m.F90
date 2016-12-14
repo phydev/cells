@@ -6,11 +6,10 @@ module misc_m
 
   private
 
-  public ::  hfield_calc, hfunc, deltak,&
-       heaviside, ran2, output_aux, spherical_surface, gen_cell_points
+  public ::  hfield_calc, hfield_calc_old, hfunc, deltak,&
+       heaviside, ran2, output_aux, spherical_surface, gen_cell_points, vec_local2global, vec_global2local
 
   contains
-
     subroutine hfield_calc(cell, aux, r, Lsize, lxyz, lxyz_inv, lxyz_part, lxyz_inv_part, ncell, tcell, ntype, np )
 
       type(mesh_t), allocatable, intent(in) :: cell(:,:)
@@ -18,7 +17,31 @@ module misc_m
       integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:), lxyz_part(:,:), lxyz_inv_part(:,:), ncell(:)
       type(mesh_t), allocatable, intent(inout) :: aux(:,:)
       integer, intent(in) ::  ntype, np, tcell, Lsize(2)
-      integer :: icell, itype, b(2), ip2, ip, rmin(2)
+      integer :: icell, itype, b(2), ip_part, ip, rmin(2), i
+
+      aux(:,:)%phi = 0.d0
+
+
+     do itype = 1, ntype
+       do icell=1+ (itype-1)*(ncell(itype-1)), ncell(itype) + (itype-1)*(ncell(itype-1))
+         do ip_part = 1, np_part
+           call vec_local2global(ip, r(icell), ip_part, lxyz, lxyz_inv, lxyz_part)
+           aux(ip,itype)%phi = aux(ip,itype)%phi + hfunc(cell(ip_part,icell)%phi)*deltak(cell(ip_part,icell)%itype,itype)
+         end do
+       end do
+     end do
+
+
+    end subroutine hfield_calc
+
+    subroutine hfield_calc_old(cell, aux, r, Lsize, lxyz, lxyz_inv, lxyz_part, lxyz_inv_part, ncell, tcell, ntype, np )
+      ! deprecated - this rountine will be removed in the next commit
+      type(mesh_t), allocatable, intent(in) :: cell(:,:)
+      integer, allocatable, intent(in) :: r(:)
+      integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:), lxyz_part(:,:), lxyz_inv_part(:,:), ncell(:)
+      type(mesh_t), allocatable, intent(inout) :: aux(:,:)
+      integer, intent(in) ::  ntype, np, tcell, Lsize(2)
+      integer :: icell, itype, b(2), ip2, ip, rmin(2), i
 
       aux(:,:)%phi = 0.d0
       do ip=1, np
@@ -28,8 +51,13 @@ module misc_m
             do icell=1+ (itype-1)*(ncell(itype-1)), ncell(itype) + (itype-1)*(ncell(itype-1))
 
                b(1:2) = lxyz(ip,1:2) - lxyz(r(icell),1:2) ! r position of the icell
-               !rmin(1:2) = min(b(1:2),2*Lsize(1:2)-b(1:2)-1) ! min image
-               ip2 = lxyz_inv_part(b(1),b(2)) !ip2 = lxyz_inv_part(rmin(1),rmin(2)) ! ip local in the icell minibox
+               rmin(1:2) = min(abs(b(1:2)),2*Lsize(1:2)-1-abs(b(1:2))) ! min image
+               !do i=1,2
+              !   if (b(i) >   Lsize(i)-1) b(i) = b(i) - 2*Lsize(i)
+              !   if (b(i) <= -Lsize(i)) b(i) = b(i) + 2*Lsize(i)
+              ! end do
+               ip2 = lxyz_inv_part(b(1),b(2)) !
+               !ip2 = lxyz_inv_part(rmin(1),rmin(2)) ! ip local in the icell minibox
                aux(ip,itype)%phi = aux(ip,itype)%phi + hfunc(cell(ip2,icell)%phi)*deltak(cell(ip2,icell)%itype,itype)
                !the kronecker delta here is not necessary, because the loop is only over the cells with same type.
 
@@ -37,7 +65,10 @@ module misc_m
          end do
       end do
 
-    end subroutine hfield_calc
+    end subroutine hfield_calc_old
+
+
+
 
 
     function hfunc(x)
@@ -233,6 +264,35 @@ module misc_m
 
     end subroutine gen_cell_points
 
+
+    subroutine vec_local2global(ip, ip_global_m, ip_local, lxyz, lxyz_inv, lxyz_part)
+      !  give the ip_local that you want to map in the global space and ip_global_m
+      ! which represents the position of the small box
+      ! the routine will return the ip (global) associated with the ip_local...
+      ! hopelly... :D
+      implicit none
+
+      integer, allocatable, intent(in) :: lxyz(:,:),  lxyz_inv(:,:), lxyz_part(:,:)
+      integer, intent(in) :: ip_global_m, ip_local
+      integer, intent(out) :: ip
+
+      ip =  lxyz_inv( lxyz_part(ip_local,1) +lxyz(ip_global_m,1), lxyz_part(ip_local,2) + lxyz(ip_global_m,2) )
+
+    end subroutine vec_local2global
+
+
+    subroutine vec_global2local(ip_part, ip_global_m, ip, lxyz, lxyz_inv, lxyz_inv_part)
+
+      implicit none
+
+      integer, allocatable, intent(in) :: lxyz(:,:),  lxyz_inv(:,:),  lxyz_inv_part(:,:)
+      integer, intent(in) :: ip_global_m, ip
+      integer, intent(out) :: ip_part
+
+      ip_part =  lxyz_inv_part( lxyz(ip,1) - lxyz(ip_global_m,1), lxyz(ip,2) - lxyz(ip_global_m,2))
+
+
+    end subroutine  vec_global2local
 
 
 end module misc_m
