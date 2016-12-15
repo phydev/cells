@@ -6,70 +6,30 @@ module misc_m
 
   private
 
-  public ::  hfield_calc, hfield_calc_old, hfunc, deltak,&
-       heaviside, ran2, output_aux, spherical_surface, gen_cell_points, vec_local2global, vec_global2local
+  public ::  hfield_calc, hfunc, deltak, heaviside, ran2, output_aux,&
+   spherical_surface, gen_cell_points, vec_local2global, vec_global2local
 
   contains
-    subroutine hfield_calc(cell, aux, r, Lsize, lxyz, lxyz_inv, lxyz_part, lxyz_inv_part, ncell, tcell, ntype, np )
+    subroutine hfield_calc(cell, aux, r, lxyz, lxyz_inv, lxyz_part, lxyz_inv_part, ncell, tcell, ntype, np_part )
 
       type(mesh_t), allocatable, intent(in) :: cell(:,:)
       integer, allocatable, intent(in) :: r(:)
       integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:), lxyz_part(:,:), lxyz_inv_part(:,:), ncell(:)
       type(mesh_t), allocatable, intent(inout) :: aux(:,:)
-      integer, intent(in) ::  ntype, np, tcell, Lsize(2)
-      integer :: icell, itype, b(2), ip_part, ip, rmin(2), i
+      integer, intent(in) ::  ntype, np_part, tcell
+      integer :: icell, itype, b(2), ip_part, ip, rmin(2)
 
       aux(:,:)%phi = 0.d0
-
-
-     do itype = 1, ntype
-       do icell=1+ (itype-1)*(ncell(itype-1)), ncell(itype) + (itype-1)*(ncell(itype-1))
-         do ip_part = 1, np_part
-           call vec_local2global(ip, r(icell), ip_part, lxyz, lxyz_inv, lxyz_part)
-           aux(ip,itype)%phi = aux(ip,itype)%phi + hfunc(cell(ip_part,icell)%phi)*deltak(cell(ip_part,icell)%itype,itype)
-         end do
-       end do
-     end do
-
-
-    end subroutine hfield_calc
-
-    subroutine hfield_calc_old(cell, aux, r, Lsize, lxyz, lxyz_inv, lxyz_part, lxyz_inv_part, ncell, tcell, ntype, np )
-      ! deprecated - this rountine will be removed in the next commit
-      type(mesh_t), allocatable, intent(in) :: cell(:,:)
-      integer, allocatable, intent(in) :: r(:)
-      integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:), lxyz_part(:,:), lxyz_inv_part(:,:), ncell(:)
-      type(mesh_t), allocatable, intent(inout) :: aux(:,:)
-      integer, intent(in) ::  ntype, np, tcell, Lsize(2)
-      integer :: icell, itype, b(2), ip2, ip, rmin(2), i
-
-      aux(:,:)%phi = 0.d0
-      do ip=1, np
-
-         do itype = 1, ntype
-
-            do icell=1+ (itype-1)*(ncell(itype-1)), ncell(itype) + (itype-1)*(ncell(itype-1))
-
-               b(1:2) = lxyz(ip,1:2) - lxyz(r(icell),1:2) ! r position of the icell
-               rmin(1:2) = min(abs(b(1:2)),2*Lsize(1:2)-1-abs(b(1:2))) ! min image
-               !do i=1,2
-              !   if (b(i) >   Lsize(i)-1) b(i) = b(i) - 2*Lsize(i)
-              !   if (b(i) <= -Lsize(i)) b(i) = b(i) + 2*Lsize(i)
-              ! end do
-               ip2 = lxyz_inv_part(b(1),b(2)) !
-               !ip2 = lxyz_inv_part(rmin(1),rmin(2)) ! ip local in the icell minibox
-               aux(ip,itype)%phi = aux(ip,itype)%phi + hfunc(cell(ip2,icell)%phi)*deltak(cell(ip2,icell)%itype,itype)
-               !the kronecker delta here is not necessary, because the loop is only over the cells with same type.
-
-            end do
-         end do
+      do itype = 1, ntype
+        do icell=1+ (itype-1)*(ncell(itype-1)), ncell(itype) + (itype-1)*(ncell(itype-1))
+          do ip_part = 1, np_part
+            call vec_local2global(ip, r(icell), ip_part, lxyz, lxyz_inv, lxyz_part)
+            aux(ip,itype)%phi = aux(ip,itype)%phi + hfunc(cell(ip_part,icell)%phi)*deltak(cell(ip_part,icell)%itype,itype)
+          end do
+        end do
       end do
 
-    end subroutine hfield_calc_old
-
-
-
-
+    end subroutine hfield_calc
 
     function hfunc(x)
 

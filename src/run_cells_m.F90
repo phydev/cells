@@ -126,7 +126,7 @@ module run_cells_m
       end if
 
 
-      call hfield_calc(cell, aux, r, Lsize, lxyz, lxyz_inv, lxyz_part, lxyz_inv_part, ncell, tcell, ntype, np )
+      call hfield_calc(cell, aux, r, lxyz, lxyz_inv, lxyz_part, lxyz_inv_part, ncell, tcell, ntype, np_part )
 
 
       ! printing header
@@ -157,7 +157,7 @@ module run_cells_m
          ! calculating gradient of vegf
          !call dderivatives_grad(cell, gg, np, lxyz, lxyz_inv, dr)
 
-         call hfield_calc(cell, aux, r, Lsize, lxyz, lxyz_inv, lxyz_part, lxyz_inv_part, ncell, tcell, ntype, np )
+         call hfield_calc(cell, aux, r, lxyz, lxyz_inv, lxyz_part, lxyz_inv_part, ncell, tcell, ntype, np_part )
 
          ! calculating laplacian of phi
 
