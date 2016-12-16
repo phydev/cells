@@ -7,9 +7,33 @@ module sim_init_m
 
   private
 
-  public :: single_cell_init, cell_pos_init, space_init, parameters_init, print_header
+  public :: chemical_init, single_cell_init, cell_pos_init, space_init, parameters_init, print_header
 
   contains
+
+
+    subroutine chemical_init(chem, np, Lsize, lxyz, lxyz_inv)
+
+      real, allocatable, intent(inout) :: chem(:)
+      integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:)
+      integer, intent(in) :: np, Lsize(2)
+      real :: l
+      l = Lsize(1)-1.0
+
+      do ip=1, np
+        if(lxyz(ip,1)>=l) then
+          chem(ip) = 1.d0
+        else
+          chem(ip) = (1.d0/(Lsize(1)+l))*real(lxyz(ip,1)) + 1.d0/(1.0 + l/Lsize(1))
+        end if
+      end do
+
+      do ip=0, 15
+      chem(lxyz_inv(-Lsize(1) + ip,:)) = 1.0 + real(ip)/10.0
+      end do
+      !chem(:) = chem(:)*0.1
+    end subroutine chemical_init
+
    subroutine  single_cell_init(cell, tcell, ncell, lxyz_part, lxyz_inv_part, sphere, np_sphere, np_part, first)
 
       implicit none

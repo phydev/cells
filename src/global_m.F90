@@ -37,7 +37,9 @@ module global_m
   integer, public :: np, np_tt, ip
   real, allocatable, public :: gg(:,:), density(:), r_cm(:,:), r_cm_part(:,:)
   type(mesh_t), allocatable, public :: cell(:,:), aux(:,:)
-
+  ! chemical variables
+  real, allocatable, public :: chem(:), gchem(:,:)
+  real, public :: chemresponse
   ! new
   real, public :: self_int, sum_int, wgamma(10)
   integer, public :: jcell, icell, tcell

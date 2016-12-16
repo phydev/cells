@@ -7,7 +7,7 @@ module misc_m
   private
 
   public ::  hfield_calc, hfunc, deltak, heaviside, ran2, output_aux,&
-   spherical_surface, gen_cell_points, vec_local2global, vec_global2local
+   spherical_surface, gen_cell_points, vec_local2global, vec_global2local, output
 
   contains
     subroutine hfield_calc(cell, aux, r, lxyz, lxyz_inv, lxyz_part, lxyz_inv_part, ncell, tcell, ntype, np_part )
@@ -124,6 +124,22 @@ module misc_m
       close(id)
     end subroutine output_aux
 
+    subroutine output(field, id, char_length, file_name, dir_name, itype, ntypes, np, lxyz)
+
+      implicit none
+      real, allocatable, intent(in) :: field(:)
+      integer, intent(in) :: id, char_length, itype, ntypes, np, lxyz(:,:)
+      character(3), intent(in) :: dir_name
+      character(len=char_length), intent(in) :: file_name
+      integer :: itypes, ip
+
+
+      OPEN (UNIT=id,FILE=trim(dir_name//'/'//file_name//'.xyz'))
+      do ip=1, np
+               write(id,'(I10,I10,F10.2,I10)') lxyz(ip,1:2), field(ip)
+      end do
+      close(id)
+    end subroutine output
 
     subroutine spherical_surface(Rc, R, ndim, delta)
 

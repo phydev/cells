@@ -80,7 +80,7 @@ module derivatives_m
 
       implicit none
       integer, intent(in) :: np, dr(2)
-      real, intent(in) :: f(0:np)
+      real,  intent(in) :: f(0:np)
       integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:)
       real,  intent(inout) :: lapl(:)
       integer :: i, j, ip, a, b, c
