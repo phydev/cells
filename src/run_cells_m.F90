@@ -205,8 +205,8 @@ module run_cells_m
 
               cell(ip,icell)%mu = interface_width*cell(ip,icell)%lapl_phi +&
                    cell(ip,icell)%phi*(1.d0-cell(ip,icell)%phi)*(cell(ip,icell)%phi - 0.50 + &
-                   vol_lagrangian*(volume_target-volume(icell)) - depletion_weight*fnu) - chemresponse/2.d0!&
-                   !(8.0-16.0*ran2(iseed) )*cell(ip,icell)%phi*(1.d0-cell(ip,icell)%phi)
+                   vol_lagrangian*(volume_target-volume(icell)) - depletion_weight*fnu) - chemresponse/2.d0 !+&
+                   !0.1*(8.0-16.0*ran2(iseed) )*cell(ip,icell)%phi*(1.d0-cell(ip,icell)%phi)
 
 
             end do
@@ -311,14 +311,14 @@ module run_cells_m
 
 
       end do
-      write(*,*) "motherfucker 1"
+    
       if(tcell.eq.2) then
         call cm_calc(r_cm, cell, tcell, np, np_part, r, lxyz, lxyz_inv, lxyz_inv_part)
         write(*,'(A,F10.2,F10.2)') "Cell 1 - End Position", r_cm(1,2)
         write(*,'(A,F10.2,F10.2)') "Cell 2 - End Position", r_cm(2,2)
         write(*,'(A,F10.2)') "Distance between the cells", r_cm(1,2)-r_cm(2,2)
       end if
-  
+
 
       !DEALLOCATE(ncell)
 
