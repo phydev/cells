@@ -18,19 +18,19 @@ module sim_init_m
       integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:)
       integer, intent(in) :: np, Lsize(2)
       real :: l
-      l = Lsize(1)-1.0
-
+      l = Lsize(1)!-1.0
+      chem(0) = 0.d0
       do ip=1, np
-        if(lxyz(ip,1)>=l) then
-          chem(ip) = 1.d0
-        else
+      !  if(lxyz(ip,1)>=l) then
+      !    chem(ip) = 1.d0
+        !else
           chem(ip) = (1.d0/(Lsize(1)+l))*real(lxyz(ip,1)) + 1.d0/(1.0 + l/Lsize(1))
-        end if
+      !  end if
       end do
 
-      do ip=0, 15
-      chem(lxyz_inv(-Lsize(1) + ip,:)) = 1.0 + real(ip)/10.0
-      end do
+    !  do ip=0, 15
+    !    chem(lxyz_inv(-Lsize(1) + ip,:)) = 0.51 + (1.d0/(Lsize(1)+l))*real(ip) + 1.d0/(1.0 + l/Lsize(1))
+      !end do
       !chem(:) = chem(:)*0.1
     end subroutine chemical_init
 
@@ -197,7 +197,7 @@ module sim_init_m
                      !lxyz(ip_part,1) = l
                      !lxyz(ip_part,2) = m
 
-                     lxyz_inv(i,j) =  0 !lxyz_inv(l, m)
+                     lxyz_inv(i,j) =  lxyz_inv(l, m)
 
                   end if
                end if
@@ -314,11 +314,11 @@ module sim_init_m
       write(*,'(A)') "************************************ Grid *************************************"
       write(*,'(A)') "Simulation Box:"
       write(*,'(A,I3,A,I3,A,I3,A)') "  Lengths = (",Lsize(1),",", Lsize(2), ")"
-      write(*,'(A)') "  the code will run in 3 dimension(s)."
+      write(*,'(A)') "  the code will run in 2 dimension(s)."
       if(periodic) then
-         write(*,'(A)') "  the code will treat the system as periodic in 3 dimension(s)."
-      else
          write(*,'(A)') "  the code will treat the system as periodic in 2 dimension(s)."
+      else
+         write(*,'(A)') "  the code will treat the system as non-periodic."
       end if
       write(*,'(A)') "*******************************************************************************"
       write(*,'(A,I3)') "  Number of cells:", tcell

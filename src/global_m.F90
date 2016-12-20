@@ -39,7 +39,7 @@ module global_m
   type(mesh_t), allocatable, public :: cell(:,:), aux(:,:)
   ! chemical variables
   real, allocatable, public :: chem(:), gchem(:,:)
-  real, public :: chemresponse
+  real, public :: chemresponse, metcoef 
   ! new
   real, public :: self_int, sum_int, wgamma(10)
   integer, public :: jcell, icell, tcell

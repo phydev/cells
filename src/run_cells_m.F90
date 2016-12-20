@@ -88,7 +88,7 @@ module run_cells_m
       cell(0,:)%lapl_phi = 0.d0
       cell(0,:)%lapl_h = 0.d0
       ! initializing space matrices
-      call space_init(Lsize, lxyz, lxyz_inv, np_bndry, np, .true.)  ! auxiliar fields
+      call space_init(Lsize, lxyz, lxyz_inv, np_bndry, np, periodic)  ! auxiliar fields
       call space_init(Lsize_part, lxyz_part, lxyz_inv_part, np_part_bndry, np_part, .false.) ! single cell fields Dirichlet boundary condition
       call chemical_init(chem, np, Lsize, lxyz, lxyz_inv)
       ! generating sphere points
@@ -110,7 +110,7 @@ module run_cells_m
         r(1) = lxyz_inv(0,-7) !(-6,10)
         r(2) = lxyz_inv(0,7) !(8,-10)
       elseif(tcell.eq.1) then
-        r(1) = lxyz_inv(0,0)
+        r(1) = lxyz_inv(-30,0)
       else
         dr = (/ int(2.0*cell_radius), ntype*int(anint(2.0*cell_radius)) /)
         dri = (/ 2*int(cell_radius), 2*int(cell_radius) /)
@@ -153,6 +153,7 @@ module run_cells_m
       cm_calc_counter = 0
       vol_lagrangian = 1.d0
       adh2 = 1.49*adh1
+      metcoef = 1.0
 
       do while(nstep<=tstep)
          nstep = nstep + 1
@@ -205,8 +206,8 @@ module run_cells_m
 
               cell(ip,icell)%mu = interface_width*cell(ip,icell)%lapl_phi +&
                    cell(ip,icell)%phi*(1.d0-cell(ip,icell)%phi)*(cell(ip,icell)%phi - 0.50 + &
-                   vol_lagrangian*(volume_target-volume(icell)) - depletion_weight*fnu) - chemresponse/2.d0 !+&
-                   !0.1*(8.0-16.0*ran2(iseed) )*cell(ip,icell)%phi*(1.d0-cell(ip,icell)%phi)
+                   vol_lagrangian*(volume_target-volume(icell)) - depletion_weight*fnu) - chemresponse/2.d0 +&
+                   metcoef*(8.0-16.0*ran2(iseed) )*cell(ip,icell)%phi*(1.d0-cell(ip,icell)%phi)
 
 
             end do
@@ -283,35 +284,35 @@ module run_cells_m
             write(file_name,'(I6)') nstep
             call output_aux(cell, nstep+1, 6, trim(file_name),dir_name, 1, 1, np_part, lxyz_part)
 
-            OPEN (UNIT=nstep,FILE=dir_name//'/phi'//trim(file_name)//'.xyz')
-            OPEN (UNIT=nstep+2,FILE=dir_name//'/phib'//trim(file_name)//'.xyz')
+            OPEN (UNIT=100,FILE=dir_name//'/phi'//trim(file_name)//'.xyz')
+            !OPEN (UNIT=nstep+2,FILE=dir_name//'/phib'//trim(file_name)//'.xyz')
             do ip=1, np
 
               do itype = 1, ntype
                  !if(aux(ip,itype)%phi>=0.9) then
-                    write(nstep,'(I10,I10,F10.2,I10)') lxyz(ip,1:2),aux(ip,itype)%phi, itype
-                    if(lxyz(ip,1).eq.lxyz(r(1),1)) then
+                    write(100,'(I10,I10,F10.2,I10)') lxyz(ip,1:2),aux(ip,itype)%phi, itype
+                !    if(lxyz(ip,1).eq.lxyz(r(1),1)) then
 
-                      call vec_global2local(ip_part, r(1), ip, lxyz, lxyz_inv, lxyz_inv_part)
-                      call vec_global2local(ip_part2, r(2), ip, lxyz, lxyz_inv, lxyz_inv_part)
+                !      call vec_global2local(ip_part, r(1), ip, lxyz, lxyz_inv, lxyz_inv_part)
+                !      call vec_global2local(ip_part2, r(2), ip, lxyz, lxyz_inv, lxyz_inv_part)
 
-                      write(nstep+2,'(I10,F10.2,F10.2)') lxyz(ip,2), cell(ip_part,1)%phi, cell(ip_part2,2)%phi
+            !          write(nstep+2,'(I10,F10.2,F10.2)') lxyz(ip,2), cell(ip_part,1)%phi, cell(ip_part2,2)%phi
 
                       !write(nstep+2,'(I10,F10.2,F10.2,F10.2)') lxyz(ip,2), aux(ip,itype)%phi
-                    end if
+                !    end if
 
                  !end if
               end do
             end do
-            close(nstep)
-            close(nstep+2)
+            close(100)
+            !close(nstep+2)
 
          end if
          ! end of the output
 
 
       end do
-    
+
       if(tcell.eq.2) then
         call cm_calc(r_cm, cell, tcell, np, np_part, r, lxyz, lxyz_inv, lxyz_inv_part)
         write(*,'(A,F10.2,F10.2)') "Cell 1 - End Position", r_cm(1,2)
@@ -460,7 +461,7 @@ module run_cells_m
         !dimg(icell,1) = min(abs(delta_r(icell,1)), 2*Lsize(1)-1-abs(delta_r(icell,1)))
         !dimg(icell,2) = min(abs(delta_r(icell,2)), 2*Lsize(2)-1-abs(delta_r(icell,2)))
 
-        if( sqrt(delta_r(icell,1)*delta_r(icell,1)+delta_r(icell,2)*delta_r(icell,2)) .ge. 1.d0 ) then
+        !if( sqrt(delta_r(icell,1)*delta_r(icell,1)+delta_r(icell,2)*delta_r(icell,2)) .ge. 1.d0 ) then
 
           do ip_part=1, np_part
               ! min image method is needed here! maybe.. i don't know
@@ -470,7 +471,7 @@ module run_cells_m
 
           f(1:np_part,icell)%phi = ftemp(1:np_part)
           r(icell) = lxyz_inv(int(anint(r_cm(icell,1))) , int(anint(r_cm(icell,2))))
-        end if
+        !end if
       end do
 
     end subroutine move

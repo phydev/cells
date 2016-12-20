@@ -136,7 +136,10 @@ module misc_m
 
       OPEN (UNIT=id,FILE=trim(dir_name//'/'//file_name//'.xyz'))
       do ip=1, np
-               write(id,'(I10,I10,F10.2,I10)') lxyz(ip,1:2), field(ip)
+              if (lxyz(ip,2).eq.0) then
+                write(id,'(I10,F10.2)') lxyz(ip,1), field(ip)
+              end if
+               !write(id,'(I10,I10,F10.2,I10)') lxyz(ip,1:2), field(ip)
       end do
       close(id)
     end subroutine output
